@@ -101,7 +101,9 @@
             
             const dataInp = document.getElementById('data').value;
             // Padroniza o mês para bater com o filtro (ex: JAN, FEV)
-            const mes = new Date(dataInp).toLocaleString('pt-BR', { month: 'short' }).toUpperCase().replace(".", "");
+            const [ano, mesNum, dia] = dataInp.split('-');
+            const mesesNomes = ["", "JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"];
+            const mes = mesesNomes[parseInt(mesNum, 10)];
             const tipo = document.getElementById('tipo').value;
             const valor = parseFloat(document.getElementById('valor').value);
 
