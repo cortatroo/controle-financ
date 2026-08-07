@@ -32,15 +32,21 @@
             <form id="formLancamento">
                 <input type="date" id="data" required>
                 <input type="text" id="descricao" placeholder="Descrição (Ex: Conta de Luz)" required>
-                <select id="tipo" required onchange="toggleValorInput()">
+                
+                <select id="tipo" required>
                     <option value="">Selecione o Tipo</option>
                     <option value="Receita">Receita</option>
                     <option value="Despesa">Despesa</option>
                 </select>
-                <input type="text" id="categoria" placeholder="Categoria (Ex: Moradia, Salário)" required>
+                
+                <!-- Aqui mudou para Select -->
+                <select id="categoria" required>
+                    <option value="">Carregando categorias...</option>
+                </select>
+                
                 <input type="number" id="valor" placeholder="Valor (R$)" step="0.01" required>
                 <button type="submit">Salvar no Google Sheets</button>
-                <p id="statusMsg"></p>
+                <p id="statusMsg" style="font-weight: bold; text-align: center;"></p>
             </form>
         </div>
 
@@ -48,7 +54,6 @@
         <div class="box" style="flex: 2;">
             <h2>Dashboard</h2>
             
-            <!-- Filtro -->
             <div class="filters">
                 <select id="filtroMes" onchange="atualizarDashboard()">
                     <option value="Todos">Todos os Meses</option>
@@ -57,35 +62,45 @@
                     <option value="MAR">Março</option>
                     <option value="ABR">Abril</option>
                     <option value="MAI">Maio</option>
+                    <option value="JUN">Junho</option>
+                    <option value="JUL">Julho</option>
+                    <option value="AGO">Agosto</option>
+                    <option value="SET">Setembro</option>
+                    <option value="OUT">Outubro</option>
+                    <option value="NOV">Novembro</option>
+                    <option value="DEZ">Dezembro</option>
                 </select>
             </div>
 
-            <!-- Cards de Resumo -->
             <div class="resumo-cards">
                 <div class="card receita">Receitas: R$ <span id="totReceita">0.00</span></div>
                 <div class="card despesa">Despesas: R$ <span id="totDespesa">0.00</span></div>
                 <div class="card saldo">Saldo: R$ <span id="totSaldo">0.00</span></div>
             </div>
 
-            <!-- Gráfico -->
             <canvas id="meuGrafico"></canvas>
         </div>
     </div>
 
     <script>
-        // COLOQUE SUA URL AQUI
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwIG_9YTGxnfmozj1UMh8lguo2t7HJj8cYeEOgaVAim0BOv_oOUWByciFGvwafAMQIE/exec'; 
+        // ===> COLE SUA NOVA URL DO APPS SCRIPT AQUI <===
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbytzL7ytbgST-bQ_anoneME9r-uo2z8X6lmSNR8A1abuqpzdLbOJ8s3kRn6vzHdUhcF/exec'; 
         
         let dadosPlanilha = [];
         let grafico;
 
-        // Função para salvar dados
+        // Salvar novos dados
         document.getElementById('formLancamento').addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = e.target.querySelector('button');
+            const statusMsg = document.getElementById('statusMsg');
+            
             btn.innerText = "Salvando...";
+            statusMsg.innerText = "";
+            statusMsg.style.color = "black";
             
             const dataInp = document.getElementById('data').value;
+            // Padroniza o mês para bater com o filtro (ex: JAN, FEV)
             const mes = new Date(dataInp).toLocaleString('pt-BR', { month: 'short' }).toUpperCase().replace(".", "");
             const tipo = document.getElementById('tipo').value;
             const valor = parseFloat(document.getElementById('valor').value);
@@ -101,51 +116,70 @@
             };
 
             try {
+                // Modificado para texto simples, evita erro de bloqueio de CORS no envio para o Google
                 await fetch(SCRIPT_URL, {
                     method: 'POST',
-                    mode: 'no-cors', // Evita erro de CORS ao enviar
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'text/plain;charset=utf-8',
+                    },
                     body: JSON.stringify(payload)
                 });
-                document.getElementById('statusMsg').innerText = "Salvo com sucesso!";
+                
+                statusMsg.innerText = "✅ Salvo com sucesso!";
+                statusMsg.style.color = "green";
                 document.getElementById('formLancamento').reset();
-                carregarDados(); // Atualiza dashboard
+                carregarDados(); // Atualiza painel com o dado novo
             } catch (err) {
-                document.getElementById('statusMsg').innerText = "Erro ao salvar.";
+                console.error(err);
+                statusMsg.innerText = "❌ Erro ao salvar. Tente novamente.";
+                statusMsg.style.color = "red";
             } finally {
                 btn.innerText = "Salvar no Google Sheets";
-                setTimeout(() => document.getElementById('statusMsg').innerText = "", 3000);
+                setTimeout(() => statusMsg.innerText = "", 4000);
             }
         });
 
-        // Carregar dados da planilha
+        // Carregar dados e categorias
         async function carregarDados() {
             try {
                 const resposta = await fetch(SCRIPT_URL);
-                dadosPlanilha = await resposta.json();
+                const json = await resposta.json();
+                
+                // 1. Salva os lançamentos
+                dadosPlanilha = json.lancamentos;
+                
+                // 2. Preenche o select de categorias
+                const selectCategoria = document.getElementById('categoria');
+                selectCategoria.innerHTML = '<option value="">Selecione a Categoria</option>';
+                
+                json.categorias.forEach(cat => {
+                    const option = document.createElement('option');
+                    option.value = cat;
+                    option.innerText = cat;
+                    selectCategoria.appendChild(option);
+                });
+
+                // 3. Atualiza os gráficos
                 atualizarDashboard();
             } catch (err) {
                 console.error("Erro ao carregar dados:", err);
+                document.getElementById('categoria').innerHTML = '<option value="">Erro ao carregar</option>';
             }
         }
 
-        // Atualizar os gráficos e totalizadores baseado nos filtros
+        // Dashboard
         function atualizarDashboard() {
             const filtroMes = document.getElementById('filtroMes').value;
             
             let dadosFiltrados = dadosPlanilha;
             if (filtroMes !== "Todos") {
                 dadosFiltrados = dadosPlanilha.filter(item => {
-                    // Trata as diferenças de string/abreviação
                     return String(item['Mês']).toUpperCase().includes(filtroMes.substring(0,3));
                 });
             }
 
-            // Calcular totais
             let totReceitas = 0;
             let totDespesas = 0;
-            
-            // Agrupar por categoria para o gráfico
             let despesasPorCategoria = {};
 
             dadosFiltrados.forEach(item => {
@@ -160,22 +194,21 @@
                 }
             });
 
-            // Atualizar Cards
-            document.getElementById('totReceita').innerText = totReceitas.toFixed(2);
-            document.getElementById('totDespesa').innerText = totDespesas.toFixed(2);
-            document.getElementById('totSaldo').innerText = (totReceitas - totDespesas).toFixed(2);
+            // Atualiza Texto
+            document.getElementById('totReceita').innerText = totReceitas.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+            document.getElementById('totDespesa').innerText = totDespesas.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+            document.getElementById('totSaldo').innerText = (totReceitas - totDespesas).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
 
-            // Atualizar Gráfico (Despesas por Categoria)
+            // Atualiza Gráfico
             const ctx = document.getElementById('meuGrafico').getContext('2d');
-            
-            if (grafico) grafico.destroy(); // Apaga o gráfico antigo antes de desenhar o novo
+            if (grafico) grafico.destroy(); 
 
             grafico = new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: Object.keys(despesasPorCategoria),
                     datasets: [{
-                        label: 'Despesas por Categoria',
+                        label: 'Despesas por Categoria (R$)',
                         data: Object.values(despesasPorCategoria),
                         backgroundColor: '#dc3545'
                     }]
@@ -184,7 +217,7 @@
             });
         }
 
-        // Carrega os dados assim que a página abre
+        // Inicia
         window.onload = carregarDados;
     </script>
 </body>
