@@ -18,13 +18,20 @@
             background: white; padding: 30px; border-radius: 8px; text-align: center;
             box-shadow: 0 4px 15px rgba(0,0,0,0.3); width: 90%; max-width: 350px;
         }
-        .login-box input { margin-bottom: 15px; }
-        .login-box button { width: 100%; margin-top: 5px; }
+        .login-box h2 { margin-top: 0; margin-bottom: 25px; color: #333;}
+        .login-box input { margin-bottom: 15px; width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid #ccc; border-radius: 4px;}
+        .login-box button { width: 100%; margin-top: 5px; background: #28a745; color: white; border: none; padding: 12px; font-weight: bold; border-radius: 4px; cursor: pointer;}
         #loginErro { color: #dc3545; font-weight: bold; font-size: 14px; margin-top: 10px; display: none; }
         
         #appContent {
             filter: blur(8px); pointer-events: none; transition: filter 0.5s ease;
         }
+
+        /* --- CABEÇALHO --- */
+        .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;}
+        .header-top h1 { margin: 0; }
+        .btn-sair { background: #dc3545; color: white; border: none; padding: 8px 15px; border-radius: 4px; font-weight: bold; cursor: pointer; }
+        .btn-sair:hover { background: #c82333; }
 
         /* --- ESTRUTURA GERAL --- */
         .container { display: flex; gap: 20px; flex-wrap: wrap; }
@@ -34,9 +41,9 @@
         .box-dash { flex: 2 1 400px; max-width: 100%; display: flex; flex-direction: column; gap: 30px;}
         
         form { display: flex; flex-direction: column; gap: 10px; }
-        input, select, button { padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; width: 100%;}
-        button { background: #28a745; color: white; cursor: pointer; border: none; font-weight: bold; padding: 12px;}
-        button:hover { background: #218838; }
+        input, select, button.btn-form { padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; width: 100%;}
+        button.btn-form { background: #28a745; color: white; cursor: pointer; border: none; font-weight: bold; padding: 12px; margin-top: 10px;}
+        button.btn-form:hover { background: #218838; }
         
         /* --- FILTROS COMPACTOS --- */
         .filter-group { 
@@ -62,6 +69,8 @@
             .container { flex-direction: column; }
             body { padding: 10px; }
             .card span { font-size: 18px; }
+            .header-top { flex-direction: column; gap: 15px; align-items: flex-start; }
+            .btn-sair { align-self: flex-end; }
         }
     </style>
 </head>
@@ -71,9 +80,8 @@
     <div id="loginOverlay">
         <div class="login-box">
             <h2>Acesso Restrito</h2>
-            <p style="font-size: 14px; color: #666;">Senha padrão: <strong>A data de hoje</strong><br>(Formato: DD/MM/AAAA)</p>
-            <input type="text" id="loginUser" placeholder="Usuário (Ex: admin)">
-            <input type="password" id="loginPass" placeholder="Senha (Ex: 07/08/2026)">
+            <input type="text" id="loginUser" placeholder="Usuário">
+            <input type="password" id="loginPass" placeholder="Senha">
             <button onclick="verificarLogin()">Entrar</button>
             <p id="loginErro">Credenciais inválidas!</p>
         </div>
@@ -81,7 +89,11 @@
 
     <!-- CONTEÚDO DO APP (Ficará borrado inicialmente) -->
     <div id="appContent">
-        <h1>Controle Financeiro</h1>
+        
+        <div class="header-top">
+            <h1>Controle Financeiro</h1>
+            <button class="btn-sair" onclick="sairDoSistema()">Sair do Sistema</button>
+        </div>
 
         <div class="container">
             <!-- Formulário de Lançamento -->
@@ -104,7 +116,7 @@
                     <input type="number" id="valor" placeholder="Valor (R$)" step="0.01" required>
                     <input type="text" id="observacoes" placeholder="Observações (Opcional)">
                     
-                    <button type="submit">Salvar no Sheets</button>
+                    <button type="submit" class="btn-form">Salvar no Sheets</button>
                     <p id="statusMsg" style="font-weight: bold; text-align: center; margin-top: 10px;"></p>
                 </form>
             </div>
@@ -115,7 +127,6 @@
                 <!-- BLOCO: TOTAIS GERAIS -->
                 <div>
                     <h2>Visão Geral</h2>
-                    <!-- Filtros independentes para os Cards -->
                     <div class="filter-group">
                         <select id="resMes" onchange="atualizarCards()"><option value="Todos">Todos os Meses</option><option value="JAN">Jan</option><option value="FEV">Fev</option><option value="MAR">Mar</option><option value="ABR">Abr</option><option value="MAI">Mai</option><option value="JUN">Jun</option><option value="JUL">Jul</option><option value="AGO">Ago</option><option value="SET">Set</option><option value="OUT">Out</option><option value="NOV">Nov</option><option value="DEZ">Dez</option></select>
                         <select id="resTipo" onchange="atualizarCards()"><option value="Todos">Todos Tipos</option><option value="Receita">Receita</option><option value="Despesa">Despesa</option></select>
@@ -174,37 +185,44 @@
         let objGrafico1, objGrafico2, objGrafico3;
         const mesesOrdem = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"];
 
-        /* --- SISTEMA DE LOGIN --- */
+        /* --- SISTEMA DE LOGIN E LOGOUT --- */
         function verificarLogin() {
             const user = document.getElementById('loginUser').value.trim().toLowerCase();
             const pass = document.getElementById('loginPass').value.trim();
             
-            // Cria a senha com a data de hoje no formato DD/MM/AAAA
+            // Senha diária: DDMMAAAA (Ex: 07082026)
             const hoje = new Date();
             const dia = String(hoje.getDate()).padStart(2, '0');
             const mes = String(hoje.getMonth() + 1).padStart(2, '0');
             const ano = hoje.getFullYear();
-            const senhaCorreta = `${dia}/${mes}/${ano}`;
+            const senhaCorreta = `${dia}${mes}${ano}`;
 
             if (user === 'admin' && pass === senhaCorreta) {
-                // Acesso Liberado!
                 document.getElementById('loginOverlay').style.display = 'none';
-                
                 const app = document.getElementById('appContent');
                 app.style.filter = 'none';
                 app.style.pointerEvents = 'auto';
                 
-                // Salva na sessão para não pedir de novo se ele atualizar a página
                 sessionStorage.setItem('logado', 'sim');
-                
-                // Só carrega os dados financeiros SE a pessoa acertou a senha! (Mais seguro)
+                document.getElementById('loginErro').style.display = 'none';
                 carregarDados();
             } else {
                 document.getElementById('loginErro').style.display = 'block';
             }
         }
 
-        // Verifica se já estava logado antes
+        function sairDoSistema() {
+            sessionStorage.removeItem('logado');
+            document.getElementById('loginUser').value = '';
+            document.getElementById('loginPass').value = '';
+            document.getElementById('loginErro').style.display = 'none';
+            
+            document.getElementById('loginOverlay').style.display = 'flex';
+            const app = document.getElementById('appContent');
+            app.style.filter = 'blur(8px)';
+            app.style.pointerEvents = 'none';
+        }
+
         window.onload = () => {
             if (sessionStorage.getItem('logado') === 'sim') {
                 document.getElementById('loginOverlay').style.display = 'none';
@@ -214,16 +232,30 @@
             }
         };
 
-        /* --- FORMATAÇÃO DE MOEDA --- */
+        /* --- FORMATAÇÃO DE MOEDA CORRIGIDA --- */
         const formatarMoeda = (valor) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor);
-        const tooltipMoeda = { callbacks: { label: (ctx) => (ctx.dataset.label ? ctx.dataset.label + ': ' : '') + formatarMoeda(ctx.parsed.y || ctx.parsed.x) } };
+        
+        // Tooltip para Gráficos Verticais (Eixo Y é o valor)
+        const tooltipMoedaY = { 
+            callbacks: { 
+                label: (ctx) => (ctx.dataset.label ? ctx.dataset.label + ': ' : '') + formatarMoeda(ctx.raw) 
+            } 
+        };
+        
+        // Tooltip para Gráficos Horizontais (Eixo X é o valor - CORREÇÃO DO BUG AQUI)
+        const tooltipMoedaX = { 
+            callbacks: { 
+                label: (ctx) => (ctx.dataset.label ? ctx.dataset.label + ': ' : '') + formatarMoeda(ctx.raw) 
+            } 
+        };
+        
         const eixoMoedaY = { ticks: { callback: (v) => formatarMoeda(v) } };
-        const eixoMoedaX = { ticks: { callback: (v) => formatarMoeda(v) } }; // Para gráfico horizontal
+        const eixoMoedaX = { ticks: { callback: (v) => formatarMoeda(v) } }; 
 
-        /* --- ENVIO DE DADOS --- */
+        /* --- ENVIO DE DADOS E CARREGAMENTO (Mantidos) --- */
         document.getElementById('formLancamento').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const btn = e.target.querySelector('button');
+            const btn = e.target.querySelector('.btn-form');
             const statusMsg = document.getElementById('statusMsg');
             
             btn.innerText = "Salvando...";
@@ -243,30 +275,20 @@
             };
 
             try {
-                await fetch(SCRIPT_URL, {
-                    method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify(payload)
-                });
-                statusMsg.innerText = "✅ Salvo com sucesso!";
-                statusMsg.style.color = "green";
+                await fetch(SCRIPT_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) });
+                statusMsg.innerText = "✅ Salvo com sucesso!"; statusMsg.style.color = "green";
                 document.getElementById('formLancamento').reset();
                 carregarDados(); 
-            } catch (err) {
-                statusMsg.innerText = "❌ Erro ao salvar."; statusMsg.style.color = "red";
-            } finally {
-                btn.innerText = "Salvar no Sheets";
-                setTimeout(() => statusMsg.innerText = "", 4000);
-            }
+            } catch (err) { statusMsg.innerText = "❌ Erro ao salvar."; statusMsg.style.color = "red"; } 
+            finally { btn.innerText = "Salvar no Sheets"; setTimeout(() => statusMsg.innerText = "", 4000); }
         });
 
-        /* --- CARREGAMENTO E FILTRAGEM BASE --- */
         async function carregarDados() {
             try {
                 const res = await fetch(SCRIPT_URL);
                 const json = await res.json();
                 dadosPlanilha = json.lancamentos;
                 
-                // Preenche TODOS os campos de categoria (do form e dos 4 filtros)
                 const selectsCat = document.querySelectorAll('.select-categoria, #categoria');
                 selectsCat.forEach(sel => {
                     const isFiltro = sel.id !== 'categoria';
@@ -277,16 +299,10 @@
                         sel.appendChild(opt);
                     });
                 });
-
-                // Atualiza todas as visões com os dados recém chegados
-                atualizarCards();
-                atualizarGrafico1();
-                atualizarGrafico2();
-                atualizarGrafico3();
-            } catch (err) { console.error(err); }
+                atualizarCards(); atualizarGrafico1(); atualizarGrafico2(); atualizarGrafico3();
+            } catch (err) {}
         }
 
-        // Função universal para filtrar os dados baseada em qual grupo de selects chamou
         function filtrar(idMes, idTipo, idCat) {
             const fMes = document.getElementById(idMes).value;
             const fTipo = document.getElementById(idTipo).value;
@@ -300,13 +316,11 @@
             });
         }
 
-        /* --- ATUALIZAÇÕES INDEPENDENTES --- */
-        
+        /* --- ATUALIZAÇÕES --- */
         function atualizarCards() {
             const dados = filtrar('resMes', 'resTipo', 'resCat');
             let totRec = 0, totDes = 0;
             dados.forEach(i => { totRec += (parseFloat(i['Receita'])||0); totDes += (parseFloat(i['Despesa'])||0); });
-            
             document.getElementById('totReceita').innerText = totRec.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
             document.getElementById('totDespesa').innerText = totDes.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
             document.getElementById('totSaldo').innerText = (totRec - totDes).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
@@ -315,12 +329,10 @@
         function atualizarGrafico1() {
             const dados = filtrar('g1Mes', 'g1Tipo', 'g1Cat');
             let resumo = {}; mesesOrdem.forEach(m => resumo[m] = 0);
-            
             dados.forEach(i => {
                 let m = String(i['Mês']).toUpperCase().trim();
                 if(resumo[m] !== undefined) resumo[m] += ((parseFloat(i['Receita'])||0) - (parseFloat(i['Despesa'])||0));
             });
-
             let dMes = [], dAcumulado = [], ac = 0;
             mesesOrdem.forEach(m => { ac += resumo[m]; dMes.push(resumo[m]); dAcumulado.push(ac); });
 
@@ -335,14 +347,13 @@
                         { type: 'bar', label: 'Saldo do Mês', data: dMes, backgroundColor: '#5c85d6' }
                     ]
                 },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { tooltip: tooltipMoeda }, scales: { y: eixoMoedaY } }
+                options: { responsive: true, maintainAspectRatio: false, plugins: { tooltip: tooltipMoedaY }, scales: { y: eixoMoedaY } }
             });
         }
 
         function atualizarGrafico2() {
             const dados = filtrar('g2Mes', 'g2Tipo', 'g2Cat');
             let resumo = {}; mesesOrdem.forEach(m => resumo[m] = { r: 0, d: 0 });
-            
             dados.forEach(i => {
                 let m = String(i['Mês']).toUpperCase().trim();
                 if(resumo[m]) {
@@ -350,7 +361,6 @@
                     resumo[m].d += (parseFloat(i['Despesa'])||0);
                 }
             });
-
             let dr = [], dd = [];
             mesesOrdem.forEach(m => { dr.push(resumo[m].r); dd.push(resumo[m].d); });
 
@@ -365,39 +375,35 @@
                         { label: 'Despesas', data: dd, backgroundColor: '#F0544F' }
                     ]
                 },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { tooltip: tooltipMoeda }, scales: { y: eixoMoedaY } }
+                options: { responsive: true, maintainAspectRatio: false, plugins: { tooltip: tooltipMoedaY }, scales: { y: eixoMoedaY } }
             });
         }
 
-        // NOVO: Gráfico Hierárquico de Categorias (Receitas e Despesas)
         function atualizarGrafico3() {
             const dados = filtrar('g3Mes', 'g3Tipo', 'g3Cat');
             let catTotais = {};
 
-            // Agrupa e soma por categoria e tipo
             dados.forEach(i => {
+                // Aqui resolvemos um bug: categorias de receita não devem se misturar com de despesa, mesmo tendo nome igual
                 let cat = i['Categoria'] || 'Sem Categoria';
-                let rec = parseFloat(i['Receita']) || 0;
-                let des = parseFloat(i['Despesa']) || 0;
+                let isReceita = (parseFloat(i['Receita']) || 0) > 0;
+                let valor = isReceita ? (parseFloat(i['Receita']) || 0) : (parseFloat(i['Despesa']) || 0);
                 
-                if (rec > 0 || des > 0) {
-                    if(!catTotais[cat]) catTotais[cat] = { r: 0, d: 0 };
-                    catTotais[cat].r += rec;
-                    catTotais[cat].d += des;
+                let chave = cat + (isReceita ? ' (R)' : ' (D)'); // Garante separação
+
+                if (valor > 0) {
+                    if(!catTotais[chave]) catTotais[chave] = { valor: 0, cor: isReceita ? '#48C9B0' : '#F0544F' };
+                    catTotais[chave].valor += valor;
                 }
             });
 
-            // Converte para array para podermos ordenar pela maior movimentação
             let hierarquia = [];
             for (let c in catTotais) {
-                if (catTotais[c].r > 0) hierarquia.push({ label: c + ' (R)', valor: catTotais[c].r, cor: '#48C9B0' }); // Verde
-                if (catTotais[c].d > 0) hierarquia.push({ label: c + ' (D)', valor: catTotais[c].d, cor: '#F0544F' }); // Vermelho
+                hierarquia.push({ label: c, valor: catTotais[c].valor, cor: catTotais[c].cor });
             }
 
-            // Ordena do maior valor para o menor
             hierarquia.sort((a, b) => b.valor - a.valor);
 
-            // Prepara os dados para o Chart.js
             let labels = hierarquia.map(h => h.label);
             let valores = hierarquia.map(h => h.valor);
             let cores = hierarquia.map(h => h.cor);
@@ -416,9 +422,12 @@
                     }]
                 },
                 options: { 
-                    indexAxis: 'y', // Faz ser barra horizontal
+                    indexAxis: 'y', 
                     responsive: true, maintainAspectRatio: false, 
-                    plugins: { tooltip: tooltipMoeda, legend: { display: false } }, 
+                    plugins: { 
+                        tooltip: tooltipMoedaX, // Correção aplicada aqui!
+                        legend: { display: false } 
+                    }, 
                     scales: { x: eixoMoedaX } 
                 }
             });
