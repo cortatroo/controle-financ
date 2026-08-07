@@ -4,21 +4,32 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Controle Financeiro</title>
+    <!-- Carrega o Chart.js para os gráficos -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f7f6; }
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f7f6; color: #333;}
         .container { display: flex; gap: 20px; flex-wrap: wrap; }
-        .box { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); flex: 1; min-width: 300px; }
+        .box { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        .box-form { flex: 1; min-width: 300px; max-width: 400px; height: fit-content;}
+        .box-dash { flex: 2; min-width: 500px; }
+        
         form { display: flex; flex-direction: column; gap: 10px; }
-        input, select, button { padding: 10px; border: 1px solid #ccc; border-radius: 4px; }
-        button { background: #28a745; color: white; cursor: pointer; border: none; font-weight: bold; }
+        input, select, button { padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; width: 100%;}
+        button { background: #28a745; color: white; cursor: pointer; border: none; font-weight: bold; margin-top: 10px;}
         button:hover { background: #218838; }
-        .filters { margin-bottom: 20px; display: flex; gap: 10px; }
-        .resumo-cards { display: flex; gap: 10px; margin-bottom: 20px; }
-        .card { padding: 15px; border-radius: 8px; color: white; flex: 1; text-align: center; font-weight: bold; }
+        
+        .filters { margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap; background: #e9ecef; padding: 15px; border-radius: 8px;}
+        .filters select { flex: 1; min-width: 150px;}
+        
+        .resumo-cards { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;}
+        .card { padding: 20px; border-radius: 8px; color: white; flex: 1; text-align: center; font-weight: bold; min-width: 120px;}
         .card.receita { background-color: #28a745; }
         .card.despesa { background-color: #dc3545; }
         .card.saldo { background-color: #007bff; }
+        .card span { display: block; font-size: 24px; margin-top: 5px;}
+
+        .charts-container { display: flex; flex-direction: column; gap: 30px; }
+        .chart-wrapper { width: 100%; height: 350px; }
     </style>
 </head>
 <body>
@@ -27,7 +38,7 @@
 
     <div class="container">
         <!-- Formulário de Lançamento -->
-        <div class="box">
+        <div class="box box-form">
             <h2>Novo Lançamento</h2>
             <form id="formLancamento">
                 <input type="date" id="data" required>
@@ -39,21 +50,21 @@
                     <option value="Despesa">Despesa</option>
                 </select>
                 
-                <!-- Aqui mudou para Select -->
                 <select id="categoria" required>
                     <option value="">Carregando categorias...</option>
                 </select>
                 
                 <input type="number" id="valor" placeholder="Valor (R$)" step="0.01" required>
                 <button type="submit">Salvar no Google Sheets</button>
-                <p id="statusMsg" style="font-weight: bold; text-align: center;"></p>
+                <p id="statusMsg" style="font-weight: bold; text-align: center; margin-top: 10px;"></p>
             </form>
         </div>
 
         <!-- Dashboard -->
-        <div class="box" style="flex: 2;">
+        <div class="box box-dash">
             <h2>Dashboard</h2>
             
+            <!-- Novos Filtros Avançados -->
             <div class="filters">
                 <select id="filtroMes" onchange="atualizarDashboard()">
                     <option value="Todos">Todos os Meses</option>
@@ -70,24 +81,48 @@
                     <option value="NOV">Novembro</option>
                     <option value="DEZ">Dezembro</option>
                 </select>
+
+                <select id="filtroTipo" onchange="atualizarDashboard()">
+                    <option value="Todos">Todos os Tipos</option>
+                    <option value="Receita">Apenas Receitas</option>
+                    <option value="Despesa">Apenas Despesas</option>
+                </select>
+
+                <select id="filtroCategoria" onchange="atualizarDashboard()">
+                    <option value="Todas">Todas as Categorias</option>
+                    <!-- Preenchido via JavaScript -->
+                </select>
             </div>
 
+            <!-- Cards de Resumo -->
             <div class="resumo-cards">
-                <div class="card receita">Receitas: R$ <span id="totReceita">0.00</span></div>
-                <div class="card despesa">Despesas: R$ <span id="totDespesa">0.00</span></div>
-                <div class="card saldo">Saldo: R$ <span id="totSaldo">0.00</span></div>
+                <div class="card receita">Receitas <span>R$ <span id="totReceita">0,00</span></span></div>
+                <div class="card despesa">Despesas <span>R$ <span id="totDespesa">0,00</span></span></div>
+                <div class="card saldo">Saldo <span>R$ <span id="totSaldo">0,00</span></span></div>
             </div>
 
-            <canvas id="meuGrafico"></canvas>
+            <div class="charts-container">
+                <!-- Gráfico de Evolução (Linha + Barra) -->
+                <div class="chart-wrapper">
+                    <canvas id="graficoEvolucao"></canvas>
+                </div>
+
+                <!-- Gráfico de Distribuição (Barras Horizontais) -->
+                <div class="chart-wrapper" id="containerDistribuicao">
+                    <canvas id="graficoDistribuicao"></canvas>
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
-        // ===> COLE SUA NOVA URL DO APPS SCRIPT AQUI <===
+        // ===> COLE SUA URL DO APPS SCRIPT AQUI <===
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbytzL7ytbgST-bQ_anoneME9r-uo2z8X6lmSNR8A1abuqpzdLbOJ8s3kRn6vzHdUhcF/exec'; 
         
         let dadosPlanilha = [];
-        let grafico;
+        let graficoEvolucaoObj;
+        let graficoDistribuicaoObj;
+        const mesesOrdem = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"];
 
         // Salvar novos dados
         document.getElementById('formLancamento').addEventListener('submit', async (e) => {
@@ -97,13 +132,13 @@
             
             btn.innerText = "Salvando...";
             statusMsg.innerText = "";
-            statusMsg.style.color = "black";
             
             const dataInp = document.getElementById('data').value;
-            // Padroniza o mês para bater com o filtro (ex: JAN, FEV)
+            
+            // CORREÇÃO DO FUSO HORÁRIO
             const [ano, mesNum, dia] = dataInp.split('-');
-            const mesesNomes = ["", "JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"];
-            const mes = mesesNomes[parseInt(mesNum, 10)];
+            const mes = mesesOrdem[parseInt(mesNum, 10) - 1]; // -1 porque o array começa em 0
+            
             const tipo = document.getElementById('tipo').value;
             const valor = parseFloat(document.getElementById('valor').value);
 
@@ -118,22 +153,19 @@
             };
 
             try {
-                // Modificado para texto simples, evita erro de bloqueio de CORS no envio para o Google
                 await fetch(SCRIPT_URL, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'text/plain;charset=utf-8',
-                    },
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                     body: JSON.stringify(payload)
                 });
                 
                 statusMsg.innerText = "✅ Salvo com sucesso!";
                 statusMsg.style.color = "green";
                 document.getElementById('formLancamento').reset();
-                carregarDados(); // Atualiza painel com o dado novo
+                carregarDados(); // Recarrega os dados para atualizar os gráficos
             } catch (err) {
                 console.error(err);
-                statusMsg.innerText = "❌ Erro ao salvar. Tente novamente.";
+                statusMsg.innerText = "❌ Erro ao salvar.";
                 statusMsg.style.color = "red";
             } finally {
                 btn.innerText = "Salvar no Google Sheets";
@@ -147,75 +179,173 @@
                 const resposta = await fetch(SCRIPT_URL);
                 const json = await resposta.json();
                 
-                // 1. Salva os lançamentos
                 dadosPlanilha = json.lancamentos;
                 
-                // 2. Preenche o select de categorias
-                const selectCategoria = document.getElementById('categoria');
-                selectCategoria.innerHTML = '<option value="">Selecione a Categoria</option>';
+                // Preenche o select do Formulário
+                const selectCatForm = document.getElementById('categoria');
+                selectCatForm.innerHTML = '<option value="">Selecione a Categoria</option>';
+                
+                // Preenche o select do Filtro no Dashboard
+                const selectCatFiltro = document.getElementById('filtroCategoria');
+                selectCatFiltro.innerHTML = '<option value="Todas">Todas as Categorias</option>';
                 
                 json.categorias.forEach(cat => {
-                    const option = document.createElement('option');
-                    option.value = cat;
-                    option.innerText = cat;
-                    selectCategoria.appendChild(option);
+                    // Formulário
+                    const optForm = document.createElement('option');
+                    optForm.value = cat;
+                    optForm.innerText = cat;
+                    selectCatForm.appendChild(optForm);
+
+                    // Filtro
+                    const optFiltro = document.createElement('option');
+                    optFiltro.value = cat;
+                    optFiltro.innerText = cat;
+                    selectCatFiltro.appendChild(optFiltro);
                 });
 
-                // 3. Atualiza os gráficos
                 atualizarDashboard();
             } catch (err) {
                 console.error("Erro ao carregar dados:", err);
-                document.getElementById('categoria').innerHTML = '<option value="">Erro ao carregar</option>';
+                document.getElementById('categoria').innerHTML = '<option value="">Erro</option>';
             }
         }
 
-        // Dashboard
+        // Dashboard Completo
         function atualizarDashboard() {
             const filtroMes = document.getElementById('filtroMes').value;
+            const filtroTipo = document.getElementById('filtroTipo').value;
+            const filtroCategoria = document.getElementById('filtroCategoria').value;
             
-            let dadosFiltrados = dadosPlanilha;
-            if (filtroMes !== "Todos") {
-                dadosFiltrados = dadosPlanilha.filter(item => {
-                    return String(item['Mês']).toUpperCase().includes(filtroMes.substring(0,3));
-                });
-            }
+            // Aplica os filtros
+            let dadosFiltrados = dadosPlanilha.filter(item => {
+                let passaMes = filtroMes === "Todos" || String(item['Mês']).toUpperCase().includes(filtroMes.substring(0,3));
+                let passaTipo = filtroTipo === "Todos" || item['Tipo'] === filtroTipo;
+                let passaCat = filtroCategoria === "Todas" || item['Categoria'] === filtroCategoria;
+                
+                return passaMes && passaTipo && passaCat;
+            });
 
+            // Variáveis para os Cards e Gráficos
             let totReceitas = 0;
             let totDespesas = 0;
             let despesasPorCategoria = {};
+            let resumoMensal = {};
 
+            // Inicializa resumo mensal vazio para os meses
+            mesesOrdem.forEach(m => {
+                resumoMensal[m] = { receita: 0, despesa: 0, saldoMes: 0 };
+            });
+
+            // Processa os dados filtrados
             dadosFiltrados.forEach(item => {
                 let rec = parseFloat(item['Receita']) || 0;
                 let des = parseFloat(item['Despesa']) || 0;
+                let mesLancamento = String(item['Mês']).toUpperCase().trim();
+                let cat = item['Categoria'] || 'Sem Categoria';
+
+                // Para os totais gerais (Cards)
                 totReceitas += rec;
                 totDespesas += des;
 
+                // Para o Gráfico de Despesas (só conta se for despesa)
                 if (des > 0) {
-                    let cat = item['Categoria'] || 'Sem Categoria';
                     despesasPorCategoria[cat] = (despesasPorCategoria[cat] || 0) + des;
+                }
+
+                // Para o Gráfico de Evolução (só se o mês for reconhecido)
+                if (resumoMensal[mesLancamento]) {
+                    resumoMensal[mesLancamento].receita += rec;
+                    resumoMensal[mesLancamento].despesa += des;
+                    resumoMensal[mesLancamento].saldoMes += (rec - des);
                 }
             });
 
-            // Atualiza Texto
-            document.getElementById('totReceita').innerText = totReceitas.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-            document.getElementById('totDespesa').innerText = totDespesas.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-            document.getElementById('totSaldo').innerText = (totReceitas - totDespesas).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+            // --- 1. Atualiza Cards ---
+            document.getElementById('totReceita').innerText = totReceitas.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            document.getElementById('totDespesa').innerText = totDespesas.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            document.getElementById('totSaldo').innerText = (totReceitas - totDespesas).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-            // Atualiza Gráfico
-            const ctx = document.getElementById('meuGrafico').getContext('2d');
-            if (grafico) grafico.destroy(); 
+            // --- 2. Atualiza Gráfico de Distribuição (Barras Horizontais) ---
+            const ctxDist = document.getElementById('graficoDistribuicao').getContext('2d');
+            if (graficoDistribuicaoObj) graficoDistribuicaoObj.destroy(); 
 
-            grafico = new Chart(ctx, {
+            // Ordenar categorias da maior despesa para a menor
+            let catsOrdenadas = Object.keys(despesasPorCategoria).sort((a, b) => despesasPorCategoria[b] - despesasPorCategoria[a]);
+            let valoresOrdenados = catsOrdenadas.map(c => despesasPorCategoria[c]);
+
+            // Se o usuário filtrou por "Receita", o gráfico de despesas fica vazio, então podemos ocultar
+            document.getElementById('containerDistribuicao').style.display = filtroTipo === 'Receita' ? 'none' : 'block';
+
+            graficoDistribuicaoObj = new Chart(ctxDist, {
                 type: 'bar',
                 data: {
-                    labels: Object.keys(despesasPorCategoria),
+                    labels: catsOrdenadas,
                     datasets: [{
-                        label: 'Despesas por Categoria (R$)',
-                        data: Object.values(despesasPorCategoria),
-                        backgroundColor: '#dc3545'
+                        label: 'Distribuição de Despesas',
+                        data: valoresOrdenados,
+                        backgroundColor: '#f44336', // Cor baseada na sua imagem
+                        borderWidth: 1
                     }]
                 },
-                options: { responsive: true }
+                options: { 
+                    indexAxis: 'y', // Isso transforma em barras horizontais!
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: true, position: 'top' }
+                    }
+                }
+            });
+
+            // --- 3. Atualiza Gráfico de Evolução (Análise de Saldo) ---
+            const ctxEvo = document.getElementById('graficoEvolucao').getContext('2d');
+            if (graficoEvolucaoObj) graficoEvolucaoObj.destroy();
+
+            // Calcula o Saldo Acumulado
+            let dadosSaldoMes = [];
+            let dadosSaldoAcumulado = [];
+            let acumulado = 0;
+
+            mesesOrdem.forEach(m => {
+                let sMes = resumoMensal[m].saldoMes;
+                acumulado += sMes;
+                dadosSaldoMes.push(sMes);
+                dadosSaldoAcumulado.push(acumulado);
+            });
+
+            graficoEvolucaoObj = new Chart(ctxEvo, {
+                type: 'bar', // Tipo principal
+                data: {
+                    labels: mesesOrdem,
+                    datasets: [
+                        {
+                            type: 'line', // Força este dataset a ser uma linha
+                            label: 'Saldo Acumulado',
+                            data: dadosSaldoAcumulado,
+                            borderColor: '#ff9800', // Cor baseada na sua imagem
+                            backgroundColor: '#ff9800',
+                            borderWidth: 3,
+                            tension: 0.1, // Linha um pouco reta
+                            fill: false,
+                            yAxisID: 'y'
+                        },
+                        {
+                            type: 'bar',
+                            label: 'Saldo do Mês',
+                            data: dadosSaldoMes,
+                            backgroundColor: '#5c85d6', // Azul baseado na imagem
+                            yAxisID: 'y'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        title: { display: true, text: 'Análise de Saldo', align: 'start', font: { size: 16 } }
+                    }
+                }
             });
         }
 
