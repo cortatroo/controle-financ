@@ -6,342 +6,423 @@
     <title>Controle Financeiro</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f4f7f6; color: #333;}
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f4f7f6; color: #333; overflow-x: hidden;}
         
-        /* Ajustes de Responsividade */
+        /* --- TELA DE LOGIN E DESFOQUE --- */
+        #loginOverlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.6); z-index: 9999;
+            display: flex; justify-content: center; align-items: center;
+        }
+        .login-box {
+            background: white; padding: 30px; border-radius: 8px; text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3); width: 90%; max-width: 350px;
+        }
+        .login-box input { margin-bottom: 15px; }
+        .login-box button { width: 100%; margin-top: 5px; }
+        #loginErro { color: #dc3545; font-weight: bold; font-size: 14px; margin-top: 10px; display: none; }
+        
+        #appContent {
+            filter: blur(8px); pointer-events: none; transition: filter 0.5s ease;
+        }
+
+        /* --- ESTRUTURA GERAL --- */
         .container { display: flex; gap: 20px; flex-wrap: wrap; }
         .box { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); width: 100%; box-sizing: border-box;}
         
-        /* Ajuste flexível para não quebrar no mobile */
         .box-form { flex: 1 1 300px; max-width: 100%; height: fit-content;}
-        .box-dash { flex: 2 1 400px; max-width: 100%; }
+        .box-dash { flex: 2 1 400px; max-width: 100%; display: flex; flex-direction: column; gap: 30px;}
         
         form { display: flex; flex-direction: column; gap: 10px; }
         input, select, button { padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; width: 100%;}
-        button { background: #28a745; color: white; cursor: pointer; border: none; font-weight: bold; margin-top: 10px;}
+        button { background: #28a745; color: white; cursor: pointer; border: none; font-weight: bold; padding: 12px;}
         button:hover { background: #218838; }
         
-        .filters { margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap; background: #e9ecef; padding: 15px; border-radius: 8px;}
-        .filters select { flex: 1 1 150px;}
+        /* --- FILTROS COMPACTOS --- */
+        .filter-group { 
+            display: flex; gap: 10px; flex-wrap: wrap; background: #e9ecef; 
+            padding: 10px; border-radius: 8px; margin-bottom: 15px;
+        }
+        .filter-group select { flex: 1 1 120px; padding: 8px; font-size: 14px; }
         
-        .resumo-cards { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;}
+        /* --- CARDS --- */
+        .resumo-cards { display: flex; gap: 10px; flex-wrap: wrap;}
         .card { padding: 20px; border-radius: 8px; color: white; flex: 1 1 120px; text-align: center; font-weight: bold;}
         .card.receita { background-color: #28a745; }
         .card.despesa { background-color: #dc3545; }
         .card.saldo { background-color: #007bff; }
-        .card span { display: block; font-size: 24px; margin-top: 5px;}
+        .card span { display: block; font-size: 22px; margin-top: 5px;}
 
-        .charts-container { display: flex; flex-direction: column; gap: 30px; }
-        .chart-wrapper { width: 100%; height: 350px; position: relative; } /* position relative ajuda no mobile */
+        /* --- GRÁFICOS --- */
+        .chart-section { border: 1px solid #ddd; padding: 15px; border-radius: 8px; }
+        .chart-section h3 { margin-top: 0; color: #555; font-size: 18px; }
+        .chart-wrapper { width: 100%; height: 350px; position: relative; }
         
         @media (max-width: 768px) {
             .container { flex-direction: column; }
-            h1 { font-size: 24px; text-align: center; }
             body { padding: 10px; }
+            .card span { font-size: 18px; }
         }
     </style>
 </head>
 <body>
 
-    <h1>Controle Financeiro</h1>
-
-    <div class="container">
-        <!-- Formulário de Lançamento -->
-        <div class="box box-form">
-            <h2>Novo Lançamento</h2>
-            <form id="formLancamento">
-                <input type="date" id="data" required>
-                <input type="text" id="descricao" placeholder="Descrição (Ex: Conta de Luz)" required>
-                
-                <select id="tipo" required>
-                    <option value="">Selecione o Tipo</option>
-                    <option value="Receita">Receita</option>
-                    <option value="Despesa">Despesa</option>
-                </select>
-                
-                <select id="categoria" required>
-                    <option value="">Carregando categorias...</option>
-                </select>
-                
-                <input type="number" id="valor" placeholder="Valor (R$)" step="0.01" required>
-                
-                <!-- NOVO CAMPO: Observações -->
-                <input type="text" id="observacoes" placeholder="Observações (Opcional)">
-                
-                <button type="submit">Salvar no Google Sheets</button>
-                <p id="statusMsg" style="font-weight: bold; text-align: center; margin-top: 10px;"></p>
-            </form>
+    <!-- POPUP DE LOGIN -->
+    <div id="loginOverlay">
+        <div class="login-box">
+            <h2>Acesso Restrito</h2>
+            <p style="font-size: 14px; color: #666;">Senha padrão: <strong>A data de hoje</strong><br>(Formato: DD/MM/AAAA)</p>
+            <input type="text" id="loginUser" placeholder="Usuário (Ex: admin)">
+            <input type="password" id="loginPass" placeholder="Senha (Ex: 07/08/2026)">
+            <button onclick="verificarLogin()">Entrar</button>
+            <p id="loginErro">Credenciais inválidas!</p>
         </div>
+    </div>
 
-        <!-- Dashboard -->
-        <div class="box box-dash">
-            <h2>Dashboard</h2>
-            
-            <div class="filters">
-                <select id="filtroMes" onchange="atualizarDashboard()">
-                    <option value="Todos">Todos os Meses</option>
-                    <option value="JAN">Janeiro</option>
-                    <option value="FEV">Fevereiro</option>
-                    <option value="MAR">Março</option>
-                    <option value="ABR">Abril</option>
-                    <option value="MAI">Maio</option>
-                    <option value="JUN">Junho</option>
-                    <option value="JUL">Julho</option>
-                    <option value="AGO">Agosto</option>
-                    <option value="SET">Setembro</option>
-                    <option value="OUT">Outubro</option>
-                    <option value="NOV">Novembro</option>
-                    <option value="DEZ">Dezembro</option>
-                </select>
+    <!-- CONTEÚDO DO APP (Ficará borrado inicialmente) -->
+    <div id="appContent">
+        <h1>Controle Financeiro</h1>
 
-                <select id="filtroTipo" onchange="atualizarDashboard()">
-                    <option value="Todos">Todos os Tipos</option>
-                    <option value="Receita">Apenas Receitas</option>
-                    <option value="Despesa">Apenas Despesas</option>
-                </select>
-
-                <select id="filtroCategoria" onchange="atualizarDashboard()">
-                    <option value="Todas">Todas as Categorias</option>
-                </select>
+        <div class="container">
+            <!-- Formulário de Lançamento -->
+            <div class="box box-form">
+                <h2>Novo Lançamento</h2>
+                <form id="formLancamento">
+                    <input type="date" id="data" required>
+                    <input type="text" id="descricao" placeholder="Descrição (Ex: Conta de Luz)" required>
+                    
+                    <select id="tipo" required>
+                        <option value="">Selecione o Tipo</option>
+                        <option value="Receita">Receita</option>
+                        <option value="Despesa">Despesa</option>
+                    </select>
+                    
+                    <select id="categoria" required>
+                        <option value="">Carregando categorias...</option>
+                    </select>
+                    
+                    <input type="number" id="valor" placeholder="Valor (R$)" step="0.01" required>
+                    <input type="text" id="observacoes" placeholder="Observações (Opcional)">
+                    
+                    <button type="submit">Salvar no Sheets</button>
+                    <p id="statusMsg" style="font-weight: bold; text-align: center; margin-top: 10px;"></p>
+                </form>
             </div>
 
-            <div class="resumo-cards">
-                <div class="card receita">Receitas <span>R$ <span id="totReceita">0,00</span></span></div>
-                <div class="card despesa">Despesas <span>R$ <span id="totDespesa">0,00</span></span></div>
-                <div class="card saldo">Saldo <span>R$ <span id="totSaldo">0,00</span></span></div>
-            </div>
-
-            <div class="charts-container">
-                <!-- Gráfico de Evolução (Linha + Barra) -->
-                <div class="chart-wrapper">
-                    <canvas id="graficoEvolucao"></canvas>
+            <!-- Dashboard -->
+            <div class="box box-dash">
+                
+                <!-- BLOCO: TOTAIS GERAIS -->
+                <div>
+                    <h2>Visão Geral</h2>
+                    <!-- Filtros independentes para os Cards -->
+                    <div class="filter-group">
+                        <select id="resMes" onchange="atualizarCards()"><option value="Todos">Todos os Meses</option><option value="JAN">Jan</option><option value="FEV">Fev</option><option value="MAR">Mar</option><option value="ABR">Abr</option><option value="MAI">Mai</option><option value="JUN">Jun</option><option value="JUL">Jul</option><option value="AGO">Ago</option><option value="SET">Set</option><option value="OUT">Out</option><option value="NOV">Nov</option><option value="DEZ">Dez</option></select>
+                        <select id="resTipo" onchange="atualizarCards()"><option value="Todos">Todos Tipos</option><option value="Receita">Receita</option><option value="Despesa">Despesa</option></select>
+                        <select id="resCat" class="select-categoria" onchange="atualizarCards()"><option value="Todas">Todas Categorias</option></select>
+                    </div>
+                    
+                    <div class="resumo-cards">
+                        <div class="card receita">Receitas <span>R$ <span id="totReceita">0,00</span></span></div>
+                        <div class="card despesa">Despesas <span>R$ <span id="totDespesa">0,00</span></span></div>
+                        <div class="card saldo">Saldo <span>R$ <span id="totSaldo">0,00</span></span></div>
+                    </div>
                 </div>
 
-                <!-- NOVO Gráfico: Análise Receitas x Despesas -->
-                <div class="chart-wrapper" id="containerReceitaDespesa">
-                    <canvas id="graficoReceitaDespesa"></canvas>
+                <!-- BLOCO: GRÁFICO 1 -->
+                <div class="chart-section">
+                    <h3>1. Evolução do Saldo</h3>
+                    <div class="filter-group">
+                        <select id="g1Mes" onchange="atualizarGrafico1()"><option value="Todos">Todos os Meses</option><option value="JAN">Jan</option><option value="FEV">Fev</option><option value="MAR">Mar</option><option value="ABR">Abr</option><option value="MAI">Mai</option><option value="JUN">Jun</option><option value="JUL">Jul</option><option value="AGO">Ago</option><option value="SET">Set</option><option value="OUT">Out</option><option value="NOV">Nov</option><option value="DEZ">Dez</option></select>
+                        <select id="g1Tipo" onchange="atualizarGrafico1()"><option value="Todos">Todos Tipos</option><option value="Receita">Receita</option><option value="Despesa">Despesa</option></select>
+                        <select id="g1Cat" class="select-categoria" onchange="atualizarGrafico1()"><option value="Todas">Todas Categorias</option></select>
+                    </div>
+                    <div class="chart-wrapper"><canvas id="grafico1"></canvas></div>
                 </div>
+
+                <!-- BLOCO: GRÁFICO 2 -->
+                <div class="chart-section">
+                    <h3>2. Comparativo Receitas x Despesas</h3>
+                    <div class="filter-group">
+                        <select id="g2Mes" onchange="atualizarGrafico2()"><option value="Todos">Todos os Meses</option><option value="JAN">Jan</option><option value="FEV">Fev</option><option value="MAR">Mar</option><option value="ABR">Abr</option><option value="MAI">Mai</option><option value="JUN">Jun</option><option value="JUL">Jul</option><option value="AGO">Ago</option><option value="SET">Set</option><option value="OUT">Out</option><option value="NOV">Nov</option><option value="DEZ">Dez</option></select>
+                        <select id="g2Tipo" onchange="atualizarGrafico2()"><option value="Todos">Todos Tipos</option><option value="Receita">Receita</option><option value="Despesa">Despesa</option></select>
+                        <select id="g2Cat" class="select-categoria" onchange="atualizarGrafico2()"><option value="Todas">Todas Categorias</option></select>
+                    </div>
+                    <div class="chart-wrapper"><canvas id="grafico2"></canvas></div>
+                </div>
+
+                <!-- BLOCO: GRÁFICO 3 (Hierarquia) -->
+                <div class="chart-section">
+                    <h3>3. Hierarquia de Movimentação (Categorias)</h3>
+                    <div class="filter-group">
+                        <select id="g3Mes" onchange="atualizarGrafico3()"><option value="Todos">Todos os Meses</option><option value="JAN">Jan</option><option value="FEV">Fev</option><option value="MAR">Mar</option><option value="ABR">Abr</option><option value="MAI">Mai</option><option value="JUN">Jun</option><option value="JUL">Jul</option><option value="AGO">Ago</option><option value="SET">Set</option><option value="OUT">Out</option><option value="NOV">Nov</option><option value="DEZ">Dez</option></select>
+                        <select id="g3Tipo" onchange="atualizarGrafico3()"><option value="Todos">Todos Tipos</option><option value="Receita">Receita</option><option value="Despesa">Despesa</option></select>
+                        <select id="g3Cat" class="select-categoria" onchange="atualizarGrafico3()"><option value="Todas">Todas Categorias</option></select>
+                    </div>
+                    <div class="chart-wrapper"><canvas id="grafico3"></canvas></div>
+                </div>
+
             </div>
         </div>
     </div>
 
     <script>
-        // ===> COLE SUA NOVA URL DO APPS SCRIPT AQUI <===
+        // ===> COLE SUA URL DO APPS SCRIPT AQUI <===
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxbMo3-oqx3IeVkDYb974u4eIBlmcoqx8VVk0Q7yihGtMjY3DblUNWby2-hc3mtWBhA/exec'; 
         
         let dadosPlanilha = [];
-        let graficoEvolucaoObj;
-        let graficoReceitaDespesaObj;
+        let objGrafico1, objGrafico2, objGrafico3;
         const mesesOrdem = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"];
 
-        // Formatador de Moeda (R$)
-        const formatarMoeda = (valor) => {
-            return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor);
-        };
+        /* --- SISTEMA DE LOGIN --- */
+        function verificarLogin() {
+            const user = document.getElementById('loginUser').value.trim().toLowerCase();
+            const pass = document.getElementById('loginPass').value.trim();
+            
+            // Cria a senha com a data de hoje no formato DD/MM/AAAA
+            const hoje = new Date();
+            const dia = String(hoje.getDate()).padStart(2, '0');
+            const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+            const ano = hoje.getFullYear();
+            const senhaCorreta = `${dia}/${mes}/${ano}`;
 
-        // Configuração Padrão do Tooltip para Gráficos
-        const tooltipMoeda = {
-            callbacks: {
-                label: function(context) {
-                    let label = context.dataset.label || '';
-                    if (label) { label += ': '; }
-                    if (context.parsed.y !== null) {
-                        label += formatarMoeda(context.parsed.y);
-                    }
-                    return label;
-                }
+            if (user === 'admin' && pass === senhaCorreta) {
+                // Acesso Liberado!
+                document.getElementById('loginOverlay').style.display = 'none';
+                
+                const app = document.getElementById('appContent');
+                app.style.filter = 'none';
+                app.style.pointerEvents = 'auto';
+                
+                // Salva na sessão para não pedir de novo se ele atualizar a página
+                sessionStorage.setItem('logado', 'sim');
+                
+                // Só carrega os dados financeiros SE a pessoa acertou a senha! (Mais seguro)
+                carregarDados();
+            } else {
+                document.getElementById('loginErro').style.display = 'block';
+            }
+        }
+
+        // Verifica se já estava logado antes
+        window.onload = () => {
+            if (sessionStorage.getItem('logado') === 'sim') {
+                document.getElementById('loginOverlay').style.display = 'none';
+                document.getElementById('appContent').style.filter = 'none';
+                document.getElementById('appContent').style.pointerEvents = 'auto';
+                carregarDados();
             }
         };
 
-        // Configuração Padrão do Eixo Y para Gráficos
-        const eixoYMoeda = {
-            ticks: {
-                callback: function(value) { return formatarMoeda(value); }
-            }
-        };
+        /* --- FORMATAÇÃO DE MOEDA --- */
+        const formatarMoeda = (valor) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor);
+        const tooltipMoeda = { callbacks: { label: (ctx) => (ctx.dataset.label ? ctx.dataset.label + ': ' : '') + formatarMoeda(ctx.parsed.y || ctx.parsed.x) } };
+        const eixoMoedaY = { ticks: { callback: (v) => formatarMoeda(v) } };
+        const eixoMoedaX = { ticks: { callback: (v) => formatarMoeda(v) } }; // Para gráfico horizontal
 
+        /* --- ENVIO DE DADOS --- */
         document.getElementById('formLancamento').addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = e.target.querySelector('button');
             const statusMsg = document.getElementById('statusMsg');
             
             btn.innerText = "Salvando...";
-            statusMsg.innerText = "";
-            
             const dataInp = document.getElementById('data').value;
             const [ano, mesNum, dia] = dataInp.split('-');
             const mes = mesesOrdem[parseInt(mesNum, 10) - 1]; 
             
             const tipo = document.getElementById('tipo').value;
             const valor = parseFloat(document.getElementById('valor').value);
-            const observacoes = document.getElementById('observacoes').value; // Coleta as observações
 
             const payload = {
-                data: dataInp,
-                mes: mes,
+                data: dataInp, mes: mes,
                 descricao: document.getElementById('descricao').value,
-                tipo: tipo,
-                categoria: document.getElementById('categoria').value,
-                receita: tipo === 'Receita' ? valor : 0,
-                despesa: tipo === 'Despesa' ? valor : 0,
-                observacoes: observacoes // Adiciona ao envio
+                tipo: tipo, categoria: document.getElementById('categoria').value,
+                receita: tipo === 'Receita' ? valor : 0, despesa: tipo === 'Despesa' ? valor : 0,
+                observacoes: document.getElementById('observacoes').value
             };
 
             try {
                 await fetch(SCRIPT_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                     body: JSON.stringify(payload)
                 });
-                
                 statusMsg.innerText = "✅ Salvo com sucesso!";
                 statusMsg.style.color = "green";
                 document.getElementById('formLancamento').reset();
                 carregarDados(); 
             } catch (err) {
-                statusMsg.innerText = "❌ Erro ao salvar.";
-                statusMsg.style.color = "red";
+                statusMsg.innerText = "❌ Erro ao salvar."; statusMsg.style.color = "red";
             } finally {
-                btn.innerText = "Salvar no Google Sheets";
+                btn.innerText = "Salvar no Sheets";
                 setTimeout(() => statusMsg.innerText = "", 4000);
             }
         });
 
+        /* --- CARREGAMENTO E FILTRAGEM BASE --- */
         async function carregarDados() {
             try {
-                const resposta = await fetch(SCRIPT_URL);
-                const json = await resposta.json();
-                
+                const res = await fetch(SCRIPT_URL);
+                const json = await res.json();
                 dadosPlanilha = json.lancamentos;
                 
-                const selectCatForm = document.getElementById('categoria');
-                selectCatForm.innerHTML = '<option value="">Selecione a Categoria</option>';
-                const selectCatFiltro = document.getElementById('filtroCategoria');
-                selectCatFiltro.innerHTML = '<option value="Todas">Todas as Categorias</option>';
-                
-                json.categorias.forEach(cat => {
-                    const optForm = document.createElement('option');
-                    optForm.value = cat; optForm.innerText = cat;
-                    selectCatForm.appendChild(optForm);
-
-                    const optFiltro = document.createElement('option');
-                    optFiltro.value = cat; optFiltro.innerText = cat;
-                    selectCatFiltro.appendChild(optFiltro);
+                // Preenche TODOS os campos de categoria (do form e dos 4 filtros)
+                const selectsCat = document.querySelectorAll('.select-categoria, #categoria');
+                selectsCat.forEach(sel => {
+                    const isFiltro = sel.id !== 'categoria';
+                    sel.innerHTML = isFiltro ? '<option value="Todas">Todas Categorias</option>' : '<option value="">Selecione a Categoria</option>';
+                    json.categorias.forEach(cat => {
+                        const opt = document.createElement('option');
+                        opt.value = cat; opt.innerText = cat;
+                        sel.appendChild(opt);
+                    });
                 });
 
-                atualizarDashboard();
-            } catch (err) {}
+                // Atualiza todas as visões com os dados recém chegados
+                atualizarCards();
+                atualizarGrafico1();
+                atualizarGrafico2();
+                atualizarGrafico3();
+            } catch (err) { console.error(err); }
         }
 
-        function atualizarDashboard() {
-            const filtroMes = document.getElementById('filtroMes').value;
-            const filtroTipo = document.getElementById('filtroTipo').value;
-            const filtroCategoria = document.getElementById('filtroCategoria').value;
+        // Função universal para filtrar os dados baseada em qual grupo de selects chamou
+        function filtrar(idMes, idTipo, idCat) {
+            const fMes = document.getElementById(idMes).value;
+            const fTipo = document.getElementById(idTipo).value;
+            const fCat = document.getElementById(idCat).value;
             
-            let dadosFiltrados = dadosPlanilha.filter(item => {
-                let passaMes = filtroMes === "Todos" || String(item['Mês']).toUpperCase().includes(filtroMes.substring(0,3));
-                let passaTipo = filtroTipo === "Todos" || item['Tipo'] === filtroTipo;
-                let passaCat = filtroCategoria === "Todas" || item['Categoria'] === filtroCategoria;
-                return passaMes && passaTipo && passaCat;
-            });
-
-            let totReceitas = 0; let totDespesas = 0;
-            let resumoMensal = {};
-
-            mesesOrdem.forEach(m => {
-                resumoMensal[m] = { receita: 0, despesa: 0, saldoMes: 0 };
-            });
-
-            dadosFiltrados.forEach(item => {
-                let rec = parseFloat(item['Receita']) || 0;
-                let des = parseFloat(item['Despesa']) || 0;
-                let mesLancamento = String(item['Mês']).toUpperCase().trim();
-
-                totReceitas += rec; totDespesas += des;
-
-                if (resumoMensal[mesLancamento]) {
-                    resumoMensal[mesLancamento].receita += rec;
-                    resumoMensal[mesLancamento].despesa += des;
-                    resumoMensal[mesLancamento].saldoMes += (rec - des);
-                }
-            });
-
-            // Atualiza Cards
-            document.getElementById('totReceita').innerText = totReceitas.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-            document.getElementById('totDespesa').innerText = totDespesas.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-            document.getElementById('totSaldo').innerText = (totReceitas - totDespesas).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-
-            // --- Gráfico 1: Análise de Saldo (Evolução) ---
-            const ctxEvo = document.getElementById('graficoEvolucao').getContext('2d');
-            if (graficoEvolucaoObj) graficoEvolucaoObj.destroy();
-
-            let dadosSaldoMes = []; let dadosSaldoAcumulado = []; let acumulado = 0;
-            mesesOrdem.forEach(m => {
-                let sMes = resumoMensal[m].saldoMes;
-                acumulado += sMes;
-                dadosSaldoMes.push(sMes); dadosSaldoAcumulado.push(acumulado);
-            });
-
-            graficoEvolucaoObj = new Chart(ctxEvo, {
-                type: 'bar',
-                data: {
-                    labels: mesesOrdem,
-                    datasets: [
-                        {
-                            type: 'line', label: 'Saldo Acumulado', data: dadosSaldoAcumulado,
-                            borderColor: '#ff9800', backgroundColor: '#ff9800', borderWidth: 3, tension: 0.1, fill: false
-                        },
-                        {
-                            type: 'bar', label: 'Saldo do Mês', data: dadosSaldoMes, backgroundColor: '#5c85d6'
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    interaction: { mode: 'index', intersect: false },
-                    plugins: { 
-                        title: { display: true, text: 'Análise de Saldo', align: 'start', font: { size: 16 } },
-                        tooltip: tooltipMoeda
-                    },
-                    scales: { y: eixoYMoeda }
-                }
-            });
-
-            // --- Gráfico 2: Receitas x Despesas (O novo gráfico da imagem!) ---
-            const ctxRD = document.getElementById('graficoReceitaDespesa').getContext('2d');
-            if (graficoReceitaDespesaObj) graficoReceitaDespesaObj.destroy();
-
-            let recMesData = []; let desMesData = [];
-            mesesOrdem.forEach(m => {
-                recMesData.push(resumoMensal[m].receita);
-                desMesData.push(resumoMensal[m].despesa);
-            });
-
-            graficoReceitaDespesaObj = new Chart(ctxRD, {
-                type: 'bar',
-                data: {
-                    labels: mesesOrdem,
-                    datasets: [
-                        {
-                            label: 'Receitas', data: recMesData, backgroundColor: '#48C9B0' // Verde da imagem
-                        },
-                        {
-                            label: 'Despesas', data: desMesData, backgroundColor: '#F0544F' // Vermelho da imagem
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    plugins: {
-                        title: { display: true, text: 'Análise de Receitas x Despesas', align: 'start', font: { size: 16 } },
-                        tooltip: tooltipMoeda
-                    },
-                    scales: { y: eixoYMoeda }
-                }
+            return dadosPlanilha.filter(item => {
+                let pMes = fMes === "Todos" || String(item['Mês']).toUpperCase().includes(fMes.substring(0,3));
+                let pTipo = fTipo === "Todos" || item['Tipo'] === fTipo;
+                let pCat = fCat === "Todas" || item['Categoria'] === fCat;
+                return pMes && pTipo && pCat;
             });
         }
 
-        window.onload = carregarDados;
+        /* --- ATUALIZAÇÕES INDEPENDENTES --- */
+        
+        function atualizarCards() {
+            const dados = filtrar('resMes', 'resTipo', 'resCat');
+            let totRec = 0, totDes = 0;
+            dados.forEach(i => { totRec += (parseFloat(i['Receita'])||0); totDes += (parseFloat(i['Despesa'])||0); });
+            
+            document.getElementById('totReceita').innerText = totRec.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+            document.getElementById('totDespesa').innerText = totDes.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+            document.getElementById('totSaldo').innerText = (totRec - totDes).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+        }
+
+        function atualizarGrafico1() {
+            const dados = filtrar('g1Mes', 'g1Tipo', 'g1Cat');
+            let resumo = {}; mesesOrdem.forEach(m => resumo[m] = 0);
+            
+            dados.forEach(i => {
+                let m = String(i['Mês']).toUpperCase().trim();
+                if(resumo[m] !== undefined) resumo[m] += ((parseFloat(i['Receita'])||0) - (parseFloat(i['Despesa'])||0));
+            });
+
+            let dMes = [], dAcumulado = [], ac = 0;
+            mesesOrdem.forEach(m => { ac += resumo[m]; dMes.push(resumo[m]); dAcumulado.push(ac); });
+
+            const ctx = document.getElementById('grafico1').getContext('2d');
+            if (objGrafico1) objGrafico1.destroy();
+            objGrafico1 = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: mesesOrdem,
+                    datasets: [
+                        { type: 'line', label: 'Saldo Acumulado', data: dAcumulado, borderColor: '#ff9800', backgroundColor: '#ff9800', borderWidth: 3, tension: 0.1, fill: false },
+                        { type: 'bar', label: 'Saldo do Mês', data: dMes, backgroundColor: '#5c85d6' }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { tooltip: tooltipMoeda }, scales: { y: eixoMoedaY } }
+            });
+        }
+
+        function atualizarGrafico2() {
+            const dados = filtrar('g2Mes', 'g2Tipo', 'g2Cat');
+            let resumo = {}; mesesOrdem.forEach(m => resumo[m] = { r: 0, d: 0 });
+            
+            dados.forEach(i => {
+                let m = String(i['Mês']).toUpperCase().trim();
+                if(resumo[m]) {
+                    resumo[m].r += (parseFloat(i['Receita'])||0);
+                    resumo[m].d += (parseFloat(i['Despesa'])||0);
+                }
+            });
+
+            let dr = [], dd = [];
+            mesesOrdem.forEach(m => { dr.push(resumo[m].r); dd.push(resumo[m].d); });
+
+            const ctx = document.getElementById('grafico2').getContext('2d');
+            if (objGrafico2) objGrafico2.destroy();
+            objGrafico2 = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: mesesOrdem,
+                    datasets: [
+                        { label: 'Receitas', data: dr, backgroundColor: '#48C9B0' },
+                        { label: 'Despesas', data: dd, backgroundColor: '#F0544F' }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { tooltip: tooltipMoeda }, scales: { y: eixoMoedaY } }
+            });
+        }
+
+        // NOVO: Gráfico Hierárquico de Categorias (Receitas e Despesas)
+        function atualizarGrafico3() {
+            const dados = filtrar('g3Mes', 'g3Tipo', 'g3Cat');
+            let catTotais = {};
+
+            // Agrupa e soma por categoria e tipo
+            dados.forEach(i => {
+                let cat = i['Categoria'] || 'Sem Categoria';
+                let rec = parseFloat(i['Receita']) || 0;
+                let des = parseFloat(i['Despesa']) || 0;
+                
+                if (rec > 0 || des > 0) {
+                    if(!catTotais[cat]) catTotais[cat] = { r: 0, d: 0 };
+                    catTotais[cat].r += rec;
+                    catTotais[cat].d += des;
+                }
+            });
+
+            // Converte para array para podermos ordenar pela maior movimentação
+            let hierarquia = [];
+            for (let c in catTotais) {
+                if (catTotais[c].r > 0) hierarquia.push({ label: c + ' (R)', valor: catTotais[c].r, cor: '#48C9B0' }); // Verde
+                if (catTotais[c].d > 0) hierarquia.push({ label: c + ' (D)', valor: catTotais[c].d, cor: '#F0544F' }); // Vermelho
+            }
+
+            // Ordena do maior valor para o menor
+            hierarquia.sort((a, b) => b.valor - a.valor);
+
+            // Prepara os dados para o Chart.js
+            let labels = hierarquia.map(h => h.label);
+            let valores = hierarquia.map(h => h.valor);
+            let cores = hierarquia.map(h => h.cor);
+
+            const ctx = document.getElementById('grafico3').getContext('2d');
+            if (objGrafico3) objGrafico3.destroy();
+            objGrafico3 = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Movimentação',
+                        data: valores,
+                        backgroundColor: cores,
+                        borderWidth: 1
+                    }]
+                },
+                options: { 
+                    indexAxis: 'y', // Faz ser barra horizontal
+                    responsive: true, maintainAspectRatio: false, 
+                    plugins: { tooltip: tooltipMoeda, legend: { display: false } }, 
+                    scales: { x: eixoMoedaX } 
+                }
+            });
+        }
     </script>
 </body>
 </html>
