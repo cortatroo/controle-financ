@@ -8,73 +8,94 @@
     <style>
         body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f4f7f6; color: #333; overflow-x: hidden;}
         
-        /* --- TELA DE LOGIN E DESFOQUE --- */
-        #loginOverlay {
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(0, 0, 0, 0.6); z-index: 9999;
-            display: flex; justify-content: center; align-items: center;
-        }
-        .login-box {
-            background: white; padding: 30px; border-radius: 8px; text-align: center;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3); width: 90%; max-width: 350px;
-        }
+        /* LOGIN (Mantido) */
+        #loginOverlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.6); z-index: 9999; display: flex; justify-content: center; align-items: center; }
+        .login-box { background: white; padding: 30px; border-radius: 8px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.3); width: 90%; max-width: 350px; }
         .login-box h2 { margin-top: 0; margin-bottom: 25px; color: #333;}
         .login-box input { margin-bottom: 15px; width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid #ccc; border-radius: 4px;}
         .login-box button { width: 100%; margin-top: 5px; background: #28a745; color: white; border: none; padding: 12px; font-weight: bold; border-radius: 4px; cursor: pointer;}
         #loginErro { color: #dc3545; font-weight: bold; font-size: 14px; margin-top: 10px; display: none; }
-        
-        #appContent {
-            filter: blur(8px); pointer-events: none; transition: filter 0.5s ease;
-        }
+        #appContent { filter: blur(8px); pointer-events: none; transition: filter 0.5s ease; }
 
-        /* --- CABEÇALHO --- */
+        /* CABEÇALHO (Mantido) */
         .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;}
         .header-top h1 { margin: 0; }
         .btn-sair { background: #dc3545; color: white; border: none; padding: 8px 15px; border-radius: 4px; font-weight: bold; cursor: pointer; }
         .btn-sair:hover { background: #c82333; }
 
-        /* --- ESTRUTURA GERAL --- */
-        .container { display: flex; gap: 20px; flex-wrap: wrap; }
+        /* ESTRUTURA GERAL */
+        .container { display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start;}
         .box { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); width: 100%; box-sizing: border-box;}
         
-        .box-form { flex: 1 1 300px; max-width: 100%; height: fit-content;}
+        .coluna-esquerda { flex: 1 1 320px; max-width: 100%; display: flex; flex-direction: column; gap: 20px; }
         .box-dash { flex: 2 1 400px; max-width: 100%; display: flex; flex-direction: column; gap: 30px;}
         
+        /* FORMULÁRIO */
         form { display: flex; flex-direction: column; gap: 10px; }
         input, select, button.btn-form { padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; width: 100%;}
-        button.btn-form { background: #28a745; color: white; cursor: pointer; border: none; font-weight: bold; padding: 12px; margin-top: 10px;}
+        button.btn-form { background: #28a745; color: white; cursor: pointer; border: none; font-weight: bold; margin-top: 5px;}
         button.btn-form:hover { background: #218838; }
+        .btn-cancelar { background: #6c757d; color: white; border: none; padding: 10px; border-radius: 4px; cursor: pointer; font-weight: bold; display: none;}
         
-        /* --- FILTROS COMPACTOS --- */
-        .filter-group { 
-            display: flex; gap: 10px; flex-wrap: wrap; background: #e9ecef; 
-            padding: 10px; border-radius: 8px; margin-bottom: 15px;
-        }
+        .input-group-btn { display: flex; gap: 5px; }
+        .btn-add { background: #007bff; color: white; border: none; border-radius: 4px; padding: 0 15px; font-weight: bold; cursor: pointer; font-size: 18px;}
+        
+        /* TABELA DE REGISTROS */
+        .tabela-container { max-height: 400px; overflow-y: auto; font-size: 14px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 10px; border-bottom: 1px solid #ddd; text-align: left; }
+        th { background-color: #f8f9fa; position: sticky; top: 0; z-index: 1;}
+        .btn-acao { cursor: pointer; border: none; background: none; font-size: 16px; padding: 5px; }
+        .txt-receita { color: #28a745; font-weight: bold;}
+        .txt-despesa { color: #dc3545; font-weight: bold;}
+
+        /* MODAL NOVA CATEGORIA */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 10000; display: none; justify-content: center; align-items: center; }
+        .modal-box { background: white; padding: 20px; border-radius: 8px; width: 300px; text-align: center; }
+        .modal-box h3 { margin-top: 0; }
+        .modal-box select, .modal-box input { margin-bottom: 15px; }
+        .modal-box button { padding: 10px; font-weight: bold; border: none; border-radius: 4px; cursor: pointer; width: 48%;}
+        .btn-salvar-cat { background: #28a745; color: white; }
+        .btn-cancelar-cat { background: #6c757d; color: white; }
+
+        /* DASHBOARD (Mantido do anterior) */
+        .filter-group { display: flex; gap: 10px; flex-wrap: wrap; background: #e9ecef; padding: 10px; border-radius: 8px; margin-bottom: 15px; }
         .filter-group select { flex: 1 1 120px; padding: 8px; font-size: 14px; }
-        
-        /* --- CARDS --- */
         .resumo-cards { display: flex; gap: 10px; flex-wrap: wrap;}
         .card { padding: 20px; border-radius: 8px; color: white; flex: 1 1 120px; text-align: center; font-weight: bold;}
         .card.receita { background-color: #28a745; }
         .card.despesa { background-color: #dc3545; }
         .card.saldo { background-color: #007bff; }
         .card span { display: block; font-size: 22px; margin-top: 5px;}
-
-        /* --- GRÁFICOS --- */
         .chart-section { border: 1px solid #ddd; padding: 15px; border-radius: 8px; }
         .chart-section h3 { margin-top: 0; color: #555; font-size: 18px; }
         .chart-wrapper { width: 100%; height: 350px; position: relative; }
         
         @media (max-width: 768px) {
             .container { flex-direction: column; }
-            body { padding: 10px; }
-            .card span { font-size: 18px; }
             .header-top { flex-direction: column; gap: 15px; align-items: flex-start; }
             .btn-sair { align-self: flex-end; }
         }
     </style>
 </head>
 <body>
+
+    <!-- MODAL NOVA CATEGORIA -->
+    <div id="modalCategoria" class="modal-overlay">
+        <div class="modal-box">
+            <h3>Nova Categoria</h3>
+            <input type="text" id="novaCatNome" placeholder="Nome (Ex: Lazer)">
+            <select id="novaCatTipo">
+                <option value="Despesa">Despesa</option>
+                <option value="Receita">Receita</option>
+            </select>
+            <div style="display: flex; justify-content: space-between;">
+                <button class="btn-cancelar-cat" onclick="fecharModalCategoria()">Cancelar</button>
+                <button class="btn-salvar-cat" onclick="salvarNovaCategoria()">Salvar</button>
+            </div>
+            <p id="statusCat" style="font-size: 12px; margin-top: 10px;"></p>
+        </div>
+    </div>
 
     <!-- POPUP DE LOGIN -->
     <div id="loginOverlay">
@@ -87,44 +108,66 @@
         </div>
     </div>
 
-    <!-- CONTEÚDO DO APP (Ficará borrado inicialmente) -->
     <div id="appContent">
-        
         <div class="header-top">
             <h1>Controle Financeiro</h1>
             <button class="btn-sair" onclick="sairDoSistema()">Sair do Sistema</button>
         </div>
 
         <div class="container">
-            <!-- Formulário de Lançamento -->
-            <div class="box box-form">
-                <h2>Novo Lançamento</h2>
-                <form id="formLancamento">
-                    <input type="date" id="data" required>
-                    <input type="text" id="descricao" placeholder="Descrição (Ex: Conta de Luz)" required>
-                    
-                    <select id="tipo" required>
-                        <option value="">Selecione o Tipo</option>
-                        <option value="Receita">Receita</option>
-                        <option value="Despesa">Despesa</option>
-                    </select>
-                    
-                    <select id="categoria" required>
-                        <option value="">Carregando categorias...</option>
-                    </select>
-                    
-                    <input type="number" id="valor" placeholder="Valor (R$)" step="0.01" required>
-                    <input type="text" id="observacoes" placeholder="Observações (Opcional)">
-                    
-                    <button type="submit" class="btn-form">Salvar no Sheets</button>
-                    <p id="statusMsg" style="font-weight: bold; text-align: center; margin-top: 10px;"></p>
-                </form>
+            
+            <!-- COLUNA ESQUERDA (FORM + TABELA) -->
+            <div class="coluna-esquerda">
+                
+                <div class="box">
+                    <h2 id="tituloForm">Novo Lançamento</h2>
+                    <form id="formLancamento">
+                        <input type="hidden" id="idLancamento"> <!-- ID Oculto para Edição -->
+                        
+                        <input type="date" id="data" required>
+                        <input type="text" id="descricao" placeholder="Descrição (Ex: Conta de Luz)" required>
+                        
+                        <!-- Ao mudar o tipo, filtra a categoria -->
+                        <select id="tipo" required onchange="filtrarDropdownCategoria()">
+                            <option value="">Selecione o Tipo</option>
+                            <option value="Receita">Receita</option>
+                            <option value="Despesa">Despesa</option>
+                        </select>
+                        
+                        <div class="input-group-btn">
+                            <select id="categoria" required>
+                                <option value="">Selecione o Tipo Primeiro</option>
+                            </select>
+                            <button type="button" class="btn-add" onclick="abrirModalCategoria()" title="Cadastrar nova categoria">+</button>
+                        </div>
+                        
+                        <input type="number" id="valor" placeholder="Valor (R$)" step="0.01" required>
+                        <input type="text" id="observacoes" placeholder="Observações (Opcional)">
+                        
+                        <button type="submit" class="btn-form" id="btnSalvarForm">Salvar no Sheets</button>
+                        <button type="button" class="btn-cancelar" id="btnCancelarEdicao" onclick="cancelarEdicao()">Cancelar Edição</button>
+                        <p id="statusMsg" style="font-weight: bold; text-align: center; margin-top: 10px;"></p>
+                    </form>
+                </div>
+
+                <div class="box">
+                    <h2>Últimos Lançamentos</h2>
+                    <div class="tabela-container">
+                        <table>
+                            <thead>
+                                <tr><th>Data</th><th>Descrição</th><th>Valor</th><th>Ação</th></tr>
+                            </thead>
+                            <tbody id="corpoTabela">
+                                <!-- Preenchido via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
             </div>
 
-            <!-- Dashboard -->
+            <!-- DASHBOARD (Mantido) -->
             <div class="box box-dash">
-                
-                <!-- BLOCO: TOTAIS GERAIS -->
                 <div>
                     <h2>Visão Geral</h2>
                     <div class="filter-group">
@@ -132,7 +175,6 @@
                         <select id="resTipo" onchange="atualizarCards()"><option value="Todos">Todos Tipos</option><option value="Receita">Receita</option><option value="Despesa">Despesa</option></select>
                         <select id="resCat" class="select-categoria" onchange="atualizarCards()"><option value="Todas">Todas Categorias</option></select>
                     </div>
-                    
                     <div class="resumo-cards">
                         <div class="card receita">Receitas <span>R$ <span id="totReceita">0,00</span></span></div>
                         <div class="card despesa">Despesas <span>R$ <span id="totDespesa">0,00</span></span></div>
@@ -140,7 +182,6 @@
                     </div>
                 </div>
 
-                <!-- BLOCO: GRÁFICO 1 -->
                 <div class="chart-section">
                     <h3>1. Evolução do Saldo</h3>
                     <div class="filter-group">
@@ -151,7 +192,6 @@
                     <div class="chart-wrapper"><canvas id="grafico1"></canvas></div>
                 </div>
 
-                <!-- BLOCO: GRÁFICO 2 -->
                 <div class="chart-section">
                     <h3>2. Comparativo Receitas x Despesas</h3>
                     <div class="filter-group">
@@ -162,9 +202,8 @@
                     <div class="chart-wrapper"><canvas id="grafico2"></canvas></div>
                 </div>
 
-                <!-- BLOCO: GRÁFICO 3 (Hierarquia) -->
                 <div class="chart-section">
-                    <h3>3. Hierarquia de Movimentação (Categorias)</h3>
+                    <h3>3. Hierarquia de Movimentação</h3>
                     <div class="filter-group">
                         <select id="g3Mes" onchange="atualizarGrafico3()"><option value="Todos">Todos os Meses</option><option value="JAN">Jan</option><option value="FEV">Fev</option><option value="MAR">Mar</option><option value="ABR">Abr</option><option value="MAI">Mai</option><option value="JUN">Jun</option><option value="JUL">Jul</option><option value="AGO">Ago</option><option value="SET">Set</option><option value="OUT">Out</option><option value="NOV">Nov</option><option value="DEZ">Dez</option></select>
                         <select id="g3Tipo" onchange="atualizarGrafico3()"><option value="Todos">Todos Tipos</option><option value="Receita">Receita</option><option value="Despesa">Despesa</option></select>
@@ -178,49 +217,37 @@
     </div>
 
     <script>
-        // ===> COLE SUA URL DO APPS SCRIPT AQUI <===
+        // ===> COLE SUA NOVA URL DO APPS SCRIPT AQUI <===
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxQ-IZ-LsWGuGIQvTVbOnG0_MDLvmM9GR0Bkv2cwsBzfr5I_rFn2nfkczVA8nqbEw5-/exec'; 
         
         let dadosPlanilha = [];
+        let categoriasGlobais = []; // Agora armazena o Nome e o Tipo
         let objGrafico1, objGrafico2, objGrafico3;
         const mesesOrdem = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"];
 
-        /* --- SISTEMA DE LOGIN E LOGOUT --- */
+        /* --- LOGIN (Mantido) --- */
         function verificarLogin() {
             const user = document.getElementById('loginUser').value.trim().toLowerCase();
             const pass = document.getElementById('loginPass').value.trim();
-            
-            // Senha diária: DDMMAAAA (Ex: 07082026)
             const hoje = new Date();
-            const dia = String(hoje.getDate()).padStart(2, '0');
-            const mes = String(hoje.getMonth() + 1).padStart(2, '0');
-            const ano = hoje.getFullYear();
-            const senhaCorreta = `${dia}${mes}${ano}`;
+            const senhaCorreta = `${String(hoje.getDate()).padStart(2,'0')}${String(hoje.getMonth()+1).padStart(2,'0')}${hoje.getFullYear()}`;
 
             if (user === 'admin' && pass === senhaCorreta) {
                 document.getElementById('loginOverlay').style.display = 'none';
-                const app = document.getElementById('appContent');
-                app.style.filter = 'none';
-                app.style.pointerEvents = 'auto';
-                
+                document.getElementById('appContent').style.filter = 'none';
+                document.getElementById('appContent').style.pointerEvents = 'auto';
                 sessionStorage.setItem('logado', 'sim');
                 document.getElementById('loginErro').style.display = 'none';
                 carregarDados();
-            } else {
-                document.getElementById('loginErro').style.display = 'block';
-            }
+            } else { document.getElementById('loginErro').style.display = 'block'; }
         }
 
         function sairDoSistema() {
             sessionStorage.removeItem('logado');
-            document.getElementById('loginUser').value = '';
-            document.getElementById('loginPass').value = '';
-            document.getElementById('loginErro').style.display = 'none';
-            
+            document.getElementById('loginUser').value = ''; document.getElementById('loginPass').value = '';
             document.getElementById('loginOverlay').style.display = 'flex';
-            const app = document.getElementById('appContent');
-            app.style.filter = 'blur(8px)';
-            app.style.pointerEvents = 'none';
+            document.getElementById('appContent').style.filter = 'blur(8px)';
+            document.getElementById('appContent').style.pointerEvents = 'none';
         }
 
         window.onload = () => {
@@ -232,43 +259,99 @@
             }
         };
 
-        /* --- FORMATAÇÃO DE MOEDA CORRIGIDA --- */
         const formatarMoeda = (valor) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor);
-        
-        // Tooltip para Gráficos Verticais (Eixo Y é o valor)
-        const tooltipMoedaY = { 
-            callbacks: { 
-                label: (ctx) => (ctx.dataset.label ? ctx.dataset.label + ': ' : '') + formatarMoeda(ctx.raw) 
-            } 
-        };
-        
-        // Tooltip para Gráficos Horizontais (Eixo X é o valor - CORREÇÃO DO BUG AQUI)
-        const tooltipMoedaX = { 
-            callbacks: { 
-                label: (ctx) => (ctx.dataset.label ? ctx.dataset.label + ': ' : '') + formatarMoeda(ctx.raw) 
-            } 
-        };
-        
+        const tooltipMoedaY = { callbacks: { label: (ctx) => (ctx.dataset.label ? ctx.dataset.label + ': ' : '') + formatarMoeda(ctx.raw) } };
+        const tooltipMoedaX = { callbacks: { label: (ctx) => (ctx.dataset.label ? ctx.dataset.label + ': ' : '') + formatarMoeda(ctx.raw) } };
         const eixoMoedaY = { ticks: { callback: (v) => formatarMoeda(v) } };
         const eixoMoedaX = { ticks: { callback: (v) => formatarMoeda(v) } }; 
 
-        /* --- ENVIO DE DADOS E CARREGAMENTO (Mantidos) --- */
+        /* --- COMUNICAÇÃO DE DADOS (CRUD) --- */
+        
+        async function carregarDados() {
+            try {
+                const res = await fetch(SCRIPT_URL);
+                const json = await res.json();
+                dadosPlanilha = json.lancamentos;
+                categoriasGlobais = json.categorias; // [{nome: "Luz", tipo: "Despesa"}]
+                
+                // Preenche os filtros do Dashboard com TODAS as categorias
+                const selectsCat = document.querySelectorAll('.select-categoria');
+                selectsCat.forEach(sel => {
+                    sel.innerHTML = '<option value="Todas">Todas Categorias</option>';
+                    categoriasGlobais.forEach(cat => {
+                        const opt = document.createElement('option');
+                        opt.value = cat.nome; opt.innerText = cat.nome;
+                        sel.appendChild(opt);
+                    });
+                });
+                
+                filtrarDropdownCategoria(); // Atualiza dropdown do Formulario
+                renderizarTabela(); // Desenha a tabela
+                atualizarCards(); atualizarGrafico1(); atualizarGrafico2(); atualizarGrafico3();
+            } catch (err) {}
+        }
+
+        // Filtra Categoria pelo Tipo no Formulário
+        function filtrarDropdownCategoria() {
+            const tipoSel = document.getElementById('tipo').value;
+            const selectForm = document.getElementById('categoria');
+            selectForm.innerHTML = '<option value="">Selecione a Categoria</option>';
+            
+            if(!tipoSel) return;
+
+            // Mostra apenas categorias que pertencem ao tipo escolhido (Receita ou Despesa)
+            const filtradas = categoriasGlobais.filter(c => c.tipo === tipoSel);
+            filtradas.forEach(cat => {
+                const opt = document.createElement('option');
+                opt.value = cat.nome; opt.innerText = cat.nome;
+                selectForm.appendChild(opt);
+            });
+        }
+
+        // Modal de Nova Categoria
+        function abrirModalCategoria() { document.getElementById('modalCategoria').style.display = 'flex'; }
+        function fecharModalCategoria() { document.getElementById('modalCategoria').style.display = 'none'; document.getElementById('novaCatNome').value = ''; document.getElementById('statusCat').innerText = '';}
+        
+        async function salvarNovaCategoria() {
+            const nome = document.getElementById('novaCatNome').value.trim();
+            const tipo = document.getElementById('novaCatTipo').value;
+            const status = document.getElementById('statusCat');
+            
+            if(!nome) { status.innerText = "Digite o nome!"; status.style.color = "red"; return; }
+            status.innerText = "Salvando..."; status.style.color = "black";
+            
+            try {
+                await fetch(SCRIPT_URL, { 
+                    method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, 
+                    body: JSON.stringify({ action: 'nova_categoria', categoria: nome, tipo: tipo }) 
+                });
+                fecharModalCategoria();
+                carregarDados(); // Recarrega para mostrar a categoria nova
+            } catch (err) { status.innerText = "Erro ao salvar"; status.style.color = "red"; }
+        }
+
+        // Formulário (Salvar / Editar)
         document.getElementById('formLancamento').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const btn = e.target.querySelector('.btn-form');
+            const btn = document.getElementById('btnSalvarForm');
             const statusMsg = document.getElementById('statusMsg');
+            btn.innerText = "Processando...";
             
-            btn.innerText = "Salvando...";
             const dataInp = document.getElementById('data').value;
             const [ano, mesNum, dia] = dataInp.split('-');
             const mes = mesesOrdem[parseInt(mesNum, 10) - 1]; 
-            
             const tipo = document.getElementById('tipo').value;
             const valor = parseFloat(document.getElementById('valor').value);
+            
+            // Lógica de ID: Se existir no input oculto é Edição, senão cria um novo (timestamp)
+            let currentId = document.getElementById('idLancamento').value;
+            let actionType = currentId ? 'editar_lancamento' : 'novo_lancamento';
+            if(!currentId) currentId = Date.now().toString(); 
 
             const payload = {
-                data: dataInp, mes: mes,
-                descricao: document.getElementById('descricao').value,
+                action: actionType,
+                id: currentId,
+                data: dataInp, mes: mes, descricao: document.getElementById('descricao').value,
                 tipo: tipo, categoria: document.getElementById('categoria').value,
                 receita: tipo === 'Receita' ? valor : 0, despesa: tipo === 'Despesa' ? valor : 0,
                 observacoes: document.getElementById('observacoes').value
@@ -277,32 +360,84 @@
             try {
                 await fetch(SCRIPT_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) });
                 statusMsg.innerText = "✅ Salvo com sucesso!"; statusMsg.style.color = "green";
-                document.getElementById('formLancamento').reset();
+                cancelarEdicao(); // Limpa tudo
                 carregarDados(); 
-            } catch (err) { statusMsg.innerText = "❌ Erro ao salvar."; statusMsg.style.color = "red"; } 
-            finally { btn.innerText = "Salvar no Sheets"; setTimeout(() => statusMsg.innerText = "", 4000); }
+            } catch (err) { statusMsg.innerText = "❌ Erro."; statusMsg.style.color = "red"; } 
+            finally { setTimeout(() => statusMsg.innerText = "", 4000); }
         });
 
-        async function carregarDados() {
-            try {
-                const res = await fetch(SCRIPT_URL);
-                const json = await res.json();
-                dadosPlanilha = json.lancamentos;
+        // Tabela de Lançamentos
+        function renderizarTabela() {
+            const tbody = document.getElementById('corpoTabela');
+            tbody.innerHTML = '';
+            
+            // Pega os últimos 20 lançamentos e inverte (mais recentes primeiro)
+            let recentes = [...dadosPlanilha].reverse().slice(0, 20);
+
+            recentes.forEach(item => {
+                if(!item.ID) return; // Se não tiver ID gerado, não renderiza (dados antigos)
                 
-                const selectsCat = document.querySelectorAll('.select-categoria, #categoria');
-                selectsCat.forEach(sel => {
-                    const isFiltro = sel.id !== 'categoria';
-                    sel.innerHTML = isFiltro ? '<option value="Todas">Todas Categorias</option>' : '<option value="">Selecione a Categoria</option>';
-                    json.categorias.forEach(cat => {
-                        const opt = document.createElement('option');
-                        opt.value = cat; opt.innerText = cat;
-                        sel.appendChild(opt);
-                    });
-                });
-                atualizarCards(); atualizarGrafico1(); atualizarGrafico2(); atualizarGrafico3();
-            } catch (err) {}
+                let valor = parseFloat(item['Receita']) > 0 ? item['Receita'] : item['Despesa'];
+                let classeValor = parseFloat(item['Receita']) > 0 ? 'txt-receita' : 'txt-despesa';
+                
+                // Formatar Data para Exibição BR (Pega só a parte da data YYYY-MM-DD se vier complexo)
+                let dataExibicao = item['Data'].toString().split('T')[0]; 
+                let [a, m, d] = dataExibicao.split('-');
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${d}/${m}/${a}</td>
+                    <td>${item['Descrição']}</td>
+                    <td class="${classeValor}">${formatarMoeda(valor)}</td>
+                    <td>
+                        <button class="btn-acao" onclick="prepararEdicao('${item.ID}')" title="Editar">✏️</button>
+                        <button class="btn-acao" onclick="excluirLancamento('${item.ID}')" title="Excluir">🗑️</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
         }
 
+        function prepararEdicao(id) {
+            const item = dadosPlanilha.find(i => String(i.ID) === String(id));
+            if(!item) return;
+
+            document.getElementById('idLancamento').value = item.ID;
+            document.getElementById('data').value = item['Data'].toString().split('T')[0];
+            document.getElementById('descricao').value = item['Descrição'];
+            document.getElementById('tipo').value = item['Tipo'];
+            
+            filtrarDropdownCategoria(); // Atualiza as opções
+            
+            document.getElementById('categoria').value = item['Categoria'];
+            document.getElementById('valor').value = parseFloat(item['Receita']) > 0 ? item['Receita'] : item['Despesa'];
+            document.getElementById('observacoes').value = item['Observações'] || '';
+
+            document.getElementById('tituloForm').innerText = "Editar Lançamento";
+            document.getElementById('btnSalvarForm').innerText = "Atualizar";
+            document.getElementById('btnCancelarEdicao').style.display = "block";
+        }
+
+        function cancelarEdicao() {
+            document.getElementById('formLancamento').reset();
+            document.getElementById('idLancamento').value = '';
+            document.getElementById('tituloForm').innerText = "Novo Lançamento";
+            document.getElementById('btnSalvarForm').innerText = "Salvar no Sheets";
+            document.getElementById('btnCancelarEdicao').style.display = "none";
+            filtrarDropdownCategoria();
+        }
+
+        async function excluirLancamento(id) {
+            if(!confirm("Tem certeza que deseja excluir este lançamento?")) return;
+            
+            try {
+                await fetch(SCRIPT_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'excluir_lancamento', id: id }) });
+                carregarDados();
+            } catch(e) { alert("Erro ao excluir."); }
+        }
+
+
+        /* --- DASHBOARD (Mantido) --- */
         function filtrar(idMes, idTipo, idCat) {
             const fMes = document.getElementById(idMes).value;
             const fTipo = document.getElementById(idTipo).value;
@@ -316,7 +451,6 @@
             });
         }
 
-        /* --- ATUALIZAÇÕES --- */
         function atualizarCards() {
             const dados = filtrar('resMes', 'resTipo', 'resCat');
             let totRec = 0, totDes = 0;
@@ -340,13 +474,7 @@
             if (objGrafico1) objGrafico1.destroy();
             objGrafico1 = new Chart(ctx, {
                 type: 'bar',
-                data: {
-                    labels: mesesOrdem,
-                    datasets: [
-                        { type: 'line', label: 'Saldo Acumulado', data: dAcumulado, borderColor: '#ff9800', backgroundColor: '#ff9800', borderWidth: 3, tension: 0.1, fill: false },
-                        { type: 'bar', label: 'Saldo do Mês', data: dMes, backgroundColor: '#5c85d6' }
-                    ]
-                },
+                data: { labels: mesesOrdem, datasets: [ { type: 'line', label: 'Saldo Acumulado', data: dAcumulado, borderColor: '#ff9800', backgroundColor: '#ff9800', borderWidth: 3, tension: 0.1, fill: false }, { type: 'bar', label: 'Saldo do Mês', data: dMes, backgroundColor: '#5c85d6' } ] },
                 options: { responsive: true, maintainAspectRatio: false, plugins: { tooltip: tooltipMoedaY }, scales: { y: eixoMoedaY } }
             });
         }
@@ -356,10 +484,7 @@
             let resumo = {}; mesesOrdem.forEach(m => resumo[m] = { r: 0, d: 0 });
             dados.forEach(i => {
                 let m = String(i['Mês']).toUpperCase().trim();
-                if(resumo[m]) {
-                    resumo[m].r += (parseFloat(i['Receita'])||0);
-                    resumo[m].d += (parseFloat(i['Despesa'])||0);
-                }
+                if(resumo[m]) { resumo[m].r += (parseFloat(i['Receita'])||0); resumo[m].d += (parseFloat(i['Despesa'])||0); }
             });
             let dr = [], dd = [];
             mesesOrdem.forEach(m => { dr.push(resumo[m].r); dd.push(resumo[m].d); });
@@ -368,13 +493,7 @@
             if (objGrafico2) objGrafico2.destroy();
             objGrafico2 = new Chart(ctx, {
                 type: 'bar',
-                data: {
-                    labels: mesesOrdem,
-                    datasets: [
-                        { label: 'Receitas', data: dr, backgroundColor: '#48C9B0' },
-                        { label: 'Despesas', data: dd, backgroundColor: '#F0544F' }
-                    ]
-                },
+                data: { labels: mesesOrdem, datasets: [ { label: 'Receitas', data: dr, backgroundColor: '#48C9B0' }, { label: 'Despesas', data: dd, backgroundColor: '#F0544F' } ] },
                 options: { responsive: true, maintainAspectRatio: false, plugins: { tooltip: tooltipMoedaY }, scales: { y: eixoMoedaY } }
             });
         }
@@ -384,12 +503,12 @@
             let catTotais = {};
 
             dados.forEach(i => {
-                // Aqui resolvemos um bug: categorias de receita não devem se misturar com de despesa, mesmo tendo nome igual
                 let cat = i['Categoria'] || 'Sem Categoria';
                 let isReceita = (parseFloat(i['Receita']) || 0) > 0;
                 let valor = isReceita ? (parseFloat(i['Receita']) || 0) : (parseFloat(i['Despesa']) || 0);
                 
-                let chave = cat + (isReceita ? ' (R)' : ' (D)'); // Garante separação
+                // Com a nova estrutura, usamos (R) ou (D) apenas de forma visual para o usuário
+                let chave = cat + (isReceita ? ' (R)' : ' (D)'); 
 
                 if (valor > 0) {
                     if(!catTotais[chave]) catTotais[chave] = { valor: 0, cor: isReceita ? '#48C9B0' : '#F0544F' };
@@ -398,38 +517,18 @@
             });
 
             let hierarquia = [];
-            for (let c in catTotais) {
-                hierarquia.push({ label: c, valor: catTotais[c].valor, cor: catTotais[c].cor });
-            }
-
+            for (let c in catTotais) { hierarquia.push({ label: c, valor: catTotais[c].valor, cor: catTotais[c].cor }); }
             hierarquia.sort((a, b) => b.valor - a.valor);
-
-            let labels = hierarquia.map(h => h.label);
-            let valores = hierarquia.map(h => h.valor);
-            let cores = hierarquia.map(h => h.cor);
 
             const ctx = document.getElementById('grafico3').getContext('2d');
             if (objGrafico3) objGrafico3.destroy();
             objGrafico3 = new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Movimentação',
-                        data: valores,
-                        backgroundColor: cores,
-                        borderWidth: 1
-                    }]
+                    labels: hierarquia.map(h => h.label),
+                    datasets: [{ label: 'Movimentação', data: hierarquia.map(h => h.valor), backgroundColor: hierarquia.map(h => h.cor), borderWidth: 1 }]
                 },
-                options: { 
-                    indexAxis: 'y', 
-                    responsive: true, maintainAspectRatio: false, 
-                    plugins: { 
-                        tooltip: tooltipMoedaX, // Correção aplicada aqui!
-                        legend: { display: false } 
-                    }, 
-                    scales: { x: eixoMoedaX } 
-                }
+                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { tooltip: tooltipMoedaX, legend: { display: false } }, scales: { x: eixoMoedaX } }
             });
         }
     </script>
